@@ -1,18 +1,60 @@
-# AM_Portfolio
+<div align="center">
 
-Retro Windows-style portfolio with private website editing.
+# AM Portfolio
 
-Visitors can view the portfolio, but only the GitHub account listed in `ADMIN_GITHUB_LOGIN` can add, edit, remove, and save content. Saved data lives in Redis through Vercel Marketplace / Upstash Redis.
+### A retro Windows-style personal portfolio with a private GitHub-authenticated CMS
 
-## 1. Create This Folder In VS Code
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=111)](https://react.dev)
+[![Auth.js](https://img.shields.io/badge/Auth.js-GitHub%20OAuth-111?style=for-the-badge)](https://authjs.dev)
+[![Upstash Redis](https://img.shields.io/badge/Upstash-Redis-00E9A3?style=for-the-badge&logo=redis&logoColor=111)](https://upstash.com)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
 
-Create this project folder:
+</div>
 
-```txt
-AM_Portfolio/
-```
+---
 
-Then add the files in the same paths as this folder:
+## Overview
+
+AM Portfolio is my personal portfolio website, designed with a nostalgic Windows 95/98 interface. It keeps the playful desktop experience from the original static HTML version, including the boot sequence, Start menu, taskbar, desktop icons, CRT-style hero section, and animated typewriter role text.
+
+The project has been upgraded from a static portfolio into a small full-stack web app. Visitors can view the portfolio normally, while only I can sign in with GitHub OAuth and edit portfolio content directly through the website UI. Saved edits persist in Redis, so skills, projects, and profile updates remain available after refreshes and future visits.
+
+---
+
+## Features
+
+- Retro Windows 95/98-inspired interface
+- Animated boot sequence before the portfolio loads
+- Desktop icons, Start menu, taskbar, and live clock
+- CRT-style hero window with animated role/typewriter text
+- Public read-only portfolio for visitors
+- Private owner-only edit mode
+- GitHub OAuth authentication with Auth.js / NextAuth
+- Admin authorization by GitHub username
+- Editable skills and projects through the browser
+- Persistent content storage with Upstash Redis
+- API routes for public content loading and protected admin saving
+- Vercel-ready deployment
+
+---
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Framework | Next.js 15 |
+| UI | React 19 |
+| Styling | CSS3, custom retro design system |
+| Authentication | Auth.js / NextAuth with GitHub OAuth |
+| Authorization | GitHub username allow-list |
+| Database | Upstash Redis |
+| Hosting | Vercel |
+| Version Control | Git + GitHub |
+
+---
+
+## Project Structure
 
 ```txt
 AM_Portfolio/
@@ -36,13 +78,45 @@ AM_Portfolio/
 └── README.md
 ```
 
-## 2. Install And Run Locally
+---
 
-Open the `AM_Portfolio` folder in VS Code, then run:
+## How It Works
+
+Visitors load the portfolio through the public page. The frontend fetches portfolio content from:
+
+```txt
+GET /api/content
+```
+
+That endpoint returns saved Redis content if it exists. If Redis is empty, the app falls back to `lib/default-content.js`.
+
+Editing is protected. Only a signed-in GitHub user whose username matches `ADMIN_GITHUB_LOGIN` can save content through:
+
+```txt
+PUT /api/admin/content
+```
+
+If someone else visits the site, they can read the portfolio but cannot modify anything.
+
+---
+
+## Local Setup
+
+Install dependencies:
 
 ```bash
 npm install
+```
+
+Create your local environment file:
+
+```bash
 cp .env.example .env.local
+```
+
+Run the app locally:
+
+```bash
 npm run dev
 ```
 
@@ -52,17 +126,42 @@ Open:
 http://localhost:3000
 ```
 
-At first, saving will not work until Redis and GitHub OAuth are configured. The public portfolio still loads from the default data in `lib/default-content.js`.
+---
 
-## 3. Create A GitHub OAuth App
+## Environment Variables
 
-Go to GitHub:
+Create `.env.local` for local development:
 
-```txt
-GitHub -> profile picture -> Settings -> Developer settings -> OAuth Apps -> New OAuth App
+```env
+AUTH_GITHUB_ID=
+AUTH_GITHUB_SECRET=
+AUTH_SECRET=
+AUTH_URL=http://localhost:3000
+NEXTAUTH_URL=http://localhost:3000
+ADMIN_GITHUB_LOGIN=Moameira
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
-For local development, use:
+Generate `AUTH_SECRET` with:
+
+```bash
+openssl rand -base64 32
+```
+
+Important: never commit `.env.local`. It contains private secrets and is ignored by Git.
+
+---
+
+## GitHub OAuth Setup
+
+Create a GitHub OAuth app for local development:
+
+```txt
+GitHub -> Settings -> Developer settings -> OAuth Apps -> New OAuth App
+```
+
+Use:
 
 ```txt
 Application name: AM Portfolio Local
@@ -70,119 +169,127 @@ Homepage URL: http://localhost:3000
 Authorization callback URL: http://localhost:3000/api/auth/callback/github
 ```
 
-After creating the app, copy:
-
-```txt
-Client ID
-Client Secret
-```
-
-Put them into `.env.local`:
+Copy the GitHub OAuth Client ID and Client Secret into `.env.local`:
 
 ```env
 AUTH_GITHUB_ID=your_client_id
 AUTH_GITHUB_SECRET=your_client_secret
 ```
 
-Also generate a secret:
-
-```bash
-openssl rand -base64 32
-```
-
-Add it:
-
-```env
-AUTH_SECRET=the_generated_secret
-AUTH_URL=http://localhost:3000
-NEXTAUTH_URL=http://localhost:3000
-ADMIN_GITHUB_LOGIN=Moameira
-```
-
-Important: `ADMIN_GITHUB_LOGIN` must be your exact GitHub username. Only that GitHub account will be allowed to save edits.
-
-## 4. Add Redis Storage
-
-Vercel KV is no longer the new-project product. For new projects, use Redis from the Vercel Marketplace, commonly Upstash Redis.
-
-On Vercel:
+For production, create a second GitHub OAuth app with the Vercel URL:
 
 ```txt
-Project -> Storage / Marketplace -> Redis -> Upstash Redis -> Connect
+Homepage URL: https://your-vercel-domain.vercel.app
+Authorization callback URL: https://your-vercel-domain.vercel.app/api/auth/callback/github
 ```
 
-Vercel should add environment variables for you. Locally, copy the Redis values into `.env.local`:
+---
+
+## Redis Setup
+
+Create an Upstash Redis database and copy the REST credentials:
 
 ```env
-UPSTASH_REDIS_REST_URL=your_redis_rest_url
-UPSTASH_REDIS_REST_TOKEN=your_redis_rest_token
+UPSTASH_REDIS_REST_URL=your_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_rest_token
 ```
 
-Restart the local dev server after editing environment variables.
+After editing environment variables, restart the dev server:
 
-## 5. Editing Content Through The Website
+```bash
+npm run dev
+```
 
-1. Open the site.
-2. Click `Owner login`.
-3. Sign in with GitHub.
-4. If your GitHub username matches `ADMIN_GITHUB_LOGIN`, the `Edit Portfolio` button appears.
-5. Add, edit, or remove skills and projects.
-6. Click `Save changes`.
+Then sign in, edit a skill or project, save, and refresh the page. If the change remains, Redis persistence is working.
 
-After saving, reload the page. The changes should still be there because they are saved in Redis.
+---
 
-## 6. Deploy To Vercel
+## Deploying To Vercel
 
-Create a GitHub repo and push this folder:
+Push the project to GitHub:
 
 ```bash
 git init
 git add .
-git commit -m "Initial AM portfolio"
+git commit -m "Initial portfolio with admin CMS"
 git branch -M main
 git remote add origin https://github.com/Moameira/AM_Portfolio.git
 git push -u origin main
 ```
 
-Then in Vercel:
+Then import the repository on Vercel:
 
 ```txt
-Vercel -> New Project -> Import GitHub repo -> Deploy
+Vercel -> New Project -> Import Git Repository -> Deploy
 ```
 
-Add these environment variables in Vercel Project Settings:
+Add the same environment variables in:
 
-```env
-AUTH_GITHUB_ID=...
-AUTH_GITHUB_SECRET=...
-AUTH_SECRET=...
-ADMIN_GITHUB_LOGIN=Moameira
-UPSTASH_REDIS_REST_URL=...
-UPSTASH_REDIS_REST_TOKEN=...
+```txt
+Vercel Project -> Settings -> Environment Variables
 ```
 
-For production, set:
+For production, use:
 
 ```env
 AUTH_URL=https://your-vercel-domain.vercel.app
 NEXTAUTH_URL=https://your-vercel-domain.vercel.app
 ```
 
-## 7. Production GitHub OAuth App
+After adding environment variables, redeploy the project.
 
-GitHub OAuth Apps only have one callback URL. The easiest clean setup is to create a second OAuth app for production:
+---
+
+## Skills I Gained From This Project
+
+These are resume-ready skills learned or strengthened while building this project:
+
+- Built a full-stack portfolio application with Next.js and React
+- Converted a static HTML/CSS website into a dynamic CMS-backed web app
+- Implemented GitHub OAuth authentication using Auth.js / NextAuth
+- Added owner-only authorization with a GitHub username allow-list
+- Designed protected API routes for private content editing
+- Created public API routes for read-only portfolio content
+- Integrated Upstash Redis as persistent cloud storage
+- Managed environment variables and application secrets securely
+- Deployed a Next.js application to Vercel
+- Connected a GitHub repository to a production deployment workflow
+- Debugged authentication, missing secret, and API response errors
+- Improved error handling for failed save requests
+- Preserved a custom retro UI while adding full-stack functionality
+- Structured project data for editable skills, projects, education, and experience
+- Practiced Git, GitHub repository setup, commits, remotes, and deployment flow
+
+Resume version:
 
 ```txt
-Application name: AM Portfolio Production
-Homepage URL: https://your-vercel-domain.vercel.app
-Authorization callback URL: https://your-vercel-domain.vercel.app/api/auth/callback/github
+Built and deployed a full-stack Next.js portfolio with GitHub OAuth admin authentication, protected API routes, and persistent Upstash Redis storage. Converted a static HTML/CSS portfolio into a CMS-style web app where only the verified owner can edit and save content through the UI.
 ```
 
-Then use that production app's Client ID and Client Secret in Vercel.
+---
 
-## Notes
+## Future Improvements
 
-- Do not expose `AUTH_GITHUB_SECRET`, `AUTH_SECRET`, or Redis tokens in public code.
-- Public visitors can call `GET /api/content`.
-- Only the admin can call `PUT /api/admin/content`.
-- The default content is in `lib/default-content.js`; once you save through the UI, Redis becomes the live source.
+- Add image upload support for project screenshots
+- Add editable education and experience sections in the admin UI
+- Add content validation before saving
+- Add preview/draft mode before publishing
+- Add automatic backups of Redis content
+
+---
+
+## Author
+
+**Mohamed Ameira**
+
+- GitHub: [Moameira](https://github.com/Moameira)
+- LinkedIn: [Mohamed Ameira](https://linkedin.com/in/mohamed-ameira-8122b31a7)
+- Portfolio: coming soon
+
+---
+
+<div align="center">
+
+Built with nostalgia, Next.js, GitHub OAuth, Redis, and a lot of debugging.
+
+</div>
