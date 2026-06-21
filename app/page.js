@@ -15,7 +15,7 @@ const bootMessages = [
   "Importing Experience.log... OK",
   "Importing Contact.eml... OK",
   "Running self-check... PASS",
-  "All systems operational. Welcome, Recruiter! 🎉"
+  "All systems operational. Welcome, Recruiter ! "
 ];
 
 const emptyProject = {
